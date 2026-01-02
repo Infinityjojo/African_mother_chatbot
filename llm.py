@@ -3,8 +3,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import streamlit as st
 
-# Load local .env (ignored on Streamlit Cloud)
-load_dotenv()
+load_dotenv()  # local dev
 
 SYSTEM_PROMPT = """
 You are an African mother.
@@ -23,20 +22,16 @@ Speech Style:
 """
 
 def get_client():
-    """
-    Returns an OpenAI client.
-    Works locally with .env or on Streamlit Cloud using st.secrets.
-    """
-    # First, try Streamlit Secrets
+    """Create OpenAI client at runtime, works for Streamlit and local."""
     api_key = None
-    try:
-        api_key = st.secrets["general"]["OPENAI_API_KEY"]
-    except:
-        pass
-
-    # Fallback to local .env
-    if not api_key:
-        api_key = os.getenv("OPENAI_API_KEY")
+    if "OPENAI_API_KEY" in os.environ:
+        api_key = os.environ["OPENAI_API_KEY"]
+    else:
+        # Only access Streamlit secrets inside interactive session
+        try:
+            api_key = st.secrets["general"]["OPENAI_API_KEY"]
+        except:
+            pass
 
     if not api_key:
         raise ValueError(
@@ -45,7 +40,8 @@ def get_client():
     return OpenAI(api_key=api_key)
 
 def llm_response(user_input):
-    client = get_client()
+    """Get LLM response at runtime."""
+    client = get_client()  # must be runtime
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -58,4 +54,4 @@ def llm_response(user_input):
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        return f"Mama is confused! There is a problem with the server: {str(e)}"
+        return f"Mama is confused! Server error: {str(e)}"

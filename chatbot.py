@@ -33,14 +33,13 @@ def get_most_relevant_sentence(user_input, sentences):
 
     return best_sentence, best_score
 
-def chatbot(user_input, kb):
-    sentences = get_all_sentences(kb)
-    response, score = get_most_relevant_sentence(user_input, sentences)
-
-    # Rule-based response if confidence is high
-    if score >= 0.2 and response:
-        endearment = random.choice(kb["persona"]["default_terms_of_endearment"])
-        return f"{endearment}, {response}"
-
-    # LLM fallback
+def chatbot(user_input, kb=None):
+    """Hybrid KB + LLM. Call LLM only when needed at runtime."""
+    if kb:
+        # Try KB match (simplified)
+        for q, a in kb.items():
+            if q.lower() in user_input.lower():
+                return a
+    # Fallback to LLM (runtime call)
     return llm_response(user_input)
+
