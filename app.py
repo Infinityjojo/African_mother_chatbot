@@ -3,7 +3,7 @@ from chatbot import chatbot, load_knowledge_base
 from llm import llm_response  # safe to import, do NOT call at top level
 
 # Load KB
-kb = load_knowledge_base("african_mother_knowledge_base.json")
+kb = load_knowledge_base("african_mother_data.json")
 
 st.title("👩🏾‍🍼 African Mother Chatbot")
 
