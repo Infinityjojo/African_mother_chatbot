@@ -1,55 +1,37 @@
 import os
 from openai import OpenAI
-from dotenv import load_dotenv
 import streamlit as st
-
-load_dotenv()  # local dev
 
 SYSTEM_PROMPT = """
 You are an African mother.
-
-Personality:
-- Strict but deeply loving
-- Humorous and sarcastic
-- Frugal and practical
-- Spiritual and protective
-
-Speech Style:
-- Rhetorical questions
-- Proverbs
-- Tough love
-- Mild pidgin expressions (Chai, Haba, Jare)
+...
 """
 
 def get_client():
-    """Create OpenAI client at runtime, works for Streamlit and local."""
-    api_key = None
-    if "OPENAI_API_KEY" in os.environ:
-        api_key = os.environ["OPENAI_API_KEY"]
-    else:
-        # Only access Streamlit secrets inside interactive session
-        try:
-            api_key = st.secrets["general"]["OPENAI_API_KEY"]
-        except:
-            pass
-
+    """Create client at runtime (only when called in Streamlit runtime)."""
+    api_key = os.getenv("OPENAI_API_KEY")  # local fallback
+    try:
+        api_key = api_key or st.secrets["general"]["OPENAI_API_KEY"]
+    except Exception:
+        pass
     if not api_key:
         raise ValueError(
-            "OPENAI_API_KEY is not set. Use .env (local) or Streamlit Secrets (cloud)."
+            "OPENAI_API_KEY not set. Use .env (local) or Streamlit Secrets (cloud)."
         )
     return OpenAI(api_key=api_key)
 
-
-def chatbot(user_input, kb=None):
-    # 1️⃣ Try knowledge base first
-    if kb:
-        for q, a in kb.items():
-            if q.lower() in user_input.lower():
-                return a
-
-    # 2️⃣ Try LLM if KB has no match
+def llm_response(user_input):
+    client = get_client()  # ⚡ must happen at runtime
     try:
-        return llm_response(user_input)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_input},
+            ],
+            temperature=0.7,
+            max_tokens=300,
+        )
+        return response.choices[0].message.content.strip()
     except Exception as e:
-        # 3️⃣ Fallback if LLM fails (e.g., quota exceeded)
-        return "Mama is tired now! I cannot think properly. Try asking something else or check your question in my wisdom database."
+        return f"Mama is tired! Cannot answer right now. ({str(e)})"
