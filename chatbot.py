@@ -33,13 +33,28 @@ def get_most_relevant_sentence(user_input, sentences):
 
     return best_sentence, best_score
 
-def chatbot(user_input, kb=None):
+
+def chatbot(user_input, kb=None, llm_fn=None):
+    """
+    Hybrid chatbot:
+    - Tries KB first
+    - Falls back to LLM if no match
+    """
+    # 1️⃣ Knowledge base first
     if kb:
-        # check if any question in kb matches user_input
         for q, a in kb.items():
             if q.lower() in user_input.lower():
                 return a
-    # fallback to LLM
-    return llm_response(user_input)
+
+    # 2️⃣ LLM fallback (if provided)
+    if llm_fn:
+        try:
+            return llm_fn(user_input)
+        except Exception:
+            return "Mama is tired! Cannot think right now. Check the KB for wisdom."
+
+    # 3️⃣ Default fallback if no LLM function provided
+    return "Mama has nothing to say about this right now."
+
 
 
