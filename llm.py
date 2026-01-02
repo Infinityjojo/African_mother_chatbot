@@ -39,19 +39,17 @@ def get_client():
         )
     return OpenAI(api_key=api_key)
 
-def llm_response(user_input):
-    """Get LLM response at runtime."""
-    client = get_client()  # must be runtime
+
+def chatbot(user_input, kb=None):
+    # 1️⃣ Try knowledge base first
+    if kb:
+        for q, a in kb.items():
+            if q.lower() in user_input.lower():
+                return a
+
+    # 2️⃣ Try LLM if KB has no match
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_input}
-            ],
-            temperature=0.7,
-            max_tokens=300
-        )
-        return response.choices[0].message.content.strip()
+        return llm_response(user_input)
     except Exception as e:
-        return f"Mama is confused! Server error: {str(e)}"
+        # 3️⃣ Fallback if LLM fails (e.g., quota exceeded)
+        return "Mama is tired now! I cannot think properly. Try asking something else or check your question in my wisdom database."

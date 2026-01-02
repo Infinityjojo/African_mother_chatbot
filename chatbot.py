@@ -34,12 +34,12 @@ def get_most_relevant_sentence(user_input, sentences):
     return best_sentence, best_score
 
 def chatbot(user_input, kb=None):
-    """Hybrid KB + LLM. Call LLM only when needed at runtime."""
     if kb:
-        # Try KB match (simplified)
+        # check if any question in kb matches user_input
         for q, a in kb.items():
             if q.lower() in user_input.lower():
                 return a
-    # Fallback to LLM (runtime call)
+    # fallback to LLM
     return llm_response(user_input)
+
 
