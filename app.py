@@ -16,11 +16,10 @@ if "history" not in st.session_state:
     st.session_state.history = []
 
 user_input = st.text_input("Talk to your mother 👀:")
-
 if st.button("Send") and user_input:
-    reply = chatbot(user_input, kb)
-    st.session_state.history.append(("You", user_input))
-    st.session_state.history.append(("Mama", reply))
+    with st.spinner("Mama is thinking..."):
+        reply = llm_response(user_input)
+        st.text_area("Mama says:", value=reply, height=200)
 
 for speaker, msg in st.session_state.history:
     if speaker == "You":
