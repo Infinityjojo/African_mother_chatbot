@@ -1,11 +1,9 @@
 import os
-from dotenv import load_dotenv
 from openai import OpenAI
+from dotenv import load_dotenv
 
-# Load environment variables from .env
+# Load .env locally (ignored on Streamlit Cloud)
 load_dotenv()
-
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 SYSTEM_PROMPT = """
 You are an African mother.
@@ -29,7 +27,18 @@ Rules:
 - Never mention AI or apologize
 """
 
+def get_client():
+    """Create and return an OpenAI client using environment variable"""
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError(
+            "OPENAI_API_KEY is not set. Set it in your .env (local) or Streamlit Secrets (cloud)."
+        )
+    return OpenAI(api_key=api_key)
+
 def llm_response(user_input):
+    """Get a response from the LLM"""
+    client = get_client()  # read API key at runtime
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -40,5 +49,3 @@ def llm_response(user_input):
         max_tokens=300
     )
     return response.choices[0].message.content.strip()
-
-print("API KEY FOUND:", os.getenv("OPENAI_API_KEY") is not None)
