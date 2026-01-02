@@ -1,8 +1,9 @@
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
+import streamlit as st
 
-# Load local .env file (ignored on Streamlit Cloud)
+# Load local .env (ignored on Streamlit Cloud)
 load_dotenv()
 
 SYSTEM_PROMPT = """
@@ -19,28 +20,31 @@ Speech Style:
 - Proverbs
 - Tough love
 - Mild pidgin expressions (Chai, Haba, Jare)
-
-Rules:
-- Speak naturally like a real African mother
-- Correct, advise, or warn with love
-- Never sound like an assistant
-- Never mention AI or apologize
 """
 
 def get_client():
-    """Creates and returns an OpenAI client using the API key at runtime."""
-    api_key = os.getenv("OPENAI_API_KEY")
+    """
+    Returns an OpenAI client.
+    Works locally with .env or on Streamlit Cloud using st.secrets.
+    """
+    # First, try Streamlit Secrets
+    api_key = None
+    try:
+        api_key = st.secrets["general"]["OPENAI_API_KEY"]
+    except:
+        pass
+
+    # Fallback to local .env
+    if not api_key:
+        api_key = os.getenv("OPENAI_API_KEY")
+
     if not api_key:
         raise ValueError(
-            "OPENAI_API_KEY is not set. Set it in your .env (local) or Streamlit Secrets (cloud)."
+            "OPENAI_API_KEY is not set. Use .env (local) or Streamlit Secrets (cloud)."
         )
     return OpenAI(api_key=api_key)
 
 def llm_response(user_input):
-    """
-    Gets a response from the LLM.
-    Returns a fallback message if the API call fails.
-    """
     client = get_client()
     try:
         response = client.chat.completions.create(
@@ -54,9 +58,4 @@ def llm_response(user_input):
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        # Friendly fallback for Streamlit UI
-        return (
-            "Mama is confused! There is a problem with the server. "
-            "Try again later.\n\n"
-            f"(Error details: {str(e)})"
-        )
+        return f"Mama is confused! There is a problem with the server: {str(e)}"
